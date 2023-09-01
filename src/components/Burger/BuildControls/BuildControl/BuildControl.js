@@ -1,6 +1,6 @@
 import React from 'react'
 import style from './BuildControl.module.css'
-const BuildControl = ({ label, key, onLess, onMore, disabled }) => {
+const BuildControl = ({ label, onLess, onMore, disabled }) => {
   return (
     <div className={style.BuildControl}>
       <div className={style.Label}>{label}</div>

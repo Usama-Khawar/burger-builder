@@ -4,7 +4,7 @@ import style from './Layout.module.css'
 const Layout = ({ children }) => {
   return (
     <Aux>
-      <div>Toolbar , SideBar , BackDrop</div>
+      <div>Toolbar , SideBar</div>
       <main className={style.content}>{children}</main>
     </Aux>
   )

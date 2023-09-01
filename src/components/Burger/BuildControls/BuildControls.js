@@ -9,7 +9,15 @@ const controls = [
   { label: 'Cheese', type: 'cheese' },
 ]
 
-const BuildControls = ({ onLess, onMore, price, disabledInfo }) => {
+const BuildControls = ({
+  onLess,
+  onMore,
+  price,
+  disabledInfo,
+  purchaseable,
+  onCheckout,
+  checkoutState,
+}) => {
   return (
     <div className={style.BuildControls}>
       <p>
@@ -26,6 +34,13 @@ const BuildControls = ({ onLess, onMore, price, disabledInfo }) => {
           />
         )
       })}
+      <button
+        onClick={onCheckout}
+        className={style.OrderButton}
+        disabled={purchaseable}
+      >
+        ORDER NOW
+      </button>
     </div>
   )
 }
