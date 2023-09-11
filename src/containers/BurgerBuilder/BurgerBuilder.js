@@ -1,9 +1,13 @@
-import React, { Component } from 'react'
+import React, { useState, useEffect } from 'react'
 import Aux from '../../hoc/Aux'
 import Burger from '../../components/Burger/Burger'
 import BuildControls from '../../components/Burger/BuildControls/BuildControls'
 import Modal from '../../components/UI/Modal/Modal'
 import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary'
+import Spinner from '../../components/UI/Spinner/Spinner'
+import withErrorHandler from '../../hoc/withErrorHandler/withErrorHandler'
+import axios from '../../axios-orders'
+import { useNavigate } from 'react-router-dom'
 
 const INGREDIENT_PRICES = {
   salad: 5,
@@ -12,126 +16,108 @@ const INGREDIENT_PRICES = {
   bacon: 7,
 }
 
-class BurgerBuilder extends Component {
-  state = {
-    ingredients: {
-      bacon: 0,
-      cheese: 0,
-      salad: 0,
-      meat: 0,
-    },
-    totalPrice: 4,
-    purchaseAble: true,
-    show: false,
+const BurgerBuilder = () => {
+  const [ingredients, setIngredients] = useState(null)
+  const [totalPrice, setTotalPrice] = useState(4)
+  const [show, setShow] = useState(false)
+  const [loading] = useState(false)
+  const [error, setError] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    axios
+      .get('/ingredients.json')
+      .then((resp) => {
+        setIngredients(resp.data)
+      })
+      .catch((error) => {
+        setError(true)
+      })
+  }, [])
+
+  const checkoutHandler = () => {
+    setShow(!show)
   }
 
-  checkoutHandler = () => {
-    this.setState({
-      show: !this.state.show,
-    })
-  }
-
-  updatePurchaseState = () => {
-    const updatedPurchaseAble = Object.values(this.state.ingredients).every(
-      (val) => val <= 0
-    )
-    this.setState({ purchaseAble: updatedPurchaseAble })
-  }
-
-  addIngredientHandler = (type) => {
-    const oldCount = this.state.ingredients[type]
+  const addIngredientHandler = (type) => {
+    const oldCount = ingredients[type]
     const updatedCount = oldCount + 1
-    const updatedIngredients = {
-      ...this.state.ingredients,
-    }
+    const updatedIngredients = { ...ingredients }
     updatedIngredients[type] = updatedCount
     const priceAddition = INGREDIENT_PRICES[type]
-    const oldPrice = this.state.totalPrice
+    const oldPrice = totalPrice
     const newPrice = oldPrice + priceAddition
-    this.setState(
-      {
-        ingredients: updatedIngredients,
-        totalPrice: newPrice,
-      },
-      () => {
-        this.updatePurchaseState()
-      }
-    )
+    setIngredients(updatedIngredients)
+    setTotalPrice(newPrice)
   }
-  removeIngredientHandler = (type) => {
-    const oldCount = this.state.ingredients[type]
+
+  const removeIngredientHandler = (type) => {
+    const oldCount = ingredients[type]
 
     if (oldCount <= 0) {
       return
     } else {
       const updatedCount = oldCount - 1
-      const updatedIngredients = {
-        ...this.state.ingredients,
-      }
+      const updatedIngredients = { ...ingredients }
       updatedIngredients[type] = updatedCount
       const priceReduction = INGREDIENT_PRICES[type]
-      const oldPrice = this.state.totalPrice
+      const oldPrice = totalPrice
       const newPrice = oldPrice - priceReduction
-      this.setState(
-        {
-          ingredients: updatedIngredients,
-          totalPrice: newPrice,
-        },
-        () => {
-          this.updatePurchaseState()
-        }
-      )
+      setIngredients(updatedIngredients)
+      setTotalPrice(newPrice)
     }
   }
 
-  purchaseCancelhandler = () => {
-    this.setState({
-      show: false,
-    })
+  const purchaseCancelhandler = () => {
+    setShow(false)
   }
 
-  purchaseContinueHandler = () => {
-    alert('you Continue')
+  const purchaseContinueHandler = () => {
+    navigate('/checkout', { state: { ingredients, totalPrice } })
   }
 
-  render() {
-    const disabledInfo = {
-      ...this.state.ingredients,
-    }
-    for (let key in disabledInfo) {
-      disabledInfo[key] = disabledInfo[key] <= 0
-    }
+  const disabledInfo = { ...ingredients }
+  for (let key in disabledInfo) {
+    disabledInfo[key] = disabledInfo[key] <= 0
+  }
 
-    return (
+  let burger = error ? <p>Website is broken</p> : <Spinner />
+  let Order = null
+
+  if (ingredients) {
+    burger = (
       <Aux>
-        {this.state.show && (
-          <Modal
-            show={this.state.show}
-            modalClosed={this.purchaseCancelhandler}
-          >
-            <OrderSummary
-              purchaseCancel={this.purchaseCancelhandler}
-              purchaseContinue={this.purchaseContinueHandler}
-              ingredients={this.state.ingredients}
-              price={this.state.totalPrice}
-            />
-          </Modal>
-        )}
-        <Burger ingredients={this.state.ingredients} />
+        <Burger ingredients={ingredients} />
         <div>
           <BuildControls
-            price={this.state.totalPrice}
-            onMore={this.addIngredientHandler}
-            onLess={this.removeIngredientHandler}
+            price={totalPrice}
+            onMore={addIngredientHandler}
+            onLess={removeIngredientHandler}
             disabledInfo={disabledInfo}
-            purchaseable={this.state.purchaseAble}
-            onCheckout={this.checkoutHandler}
-            checkoutState={this.state.show}
+            onCheckout={checkoutHandler}
+            checkoutState={show}
           />
         </div>
       </Aux>
     )
+    Order = (
+      <OrderSummary
+        purchaseCancel={purchaseCancelhandler}
+        purchaseContinue={purchaseContinueHandler}
+        ingredients={ingredients}
+        price={totalPrice}
+      />
+    )
   }
+
+  return (
+    <Aux>
+      <Modal show={show} modalClosed={purchaseCancelhandler}>
+        {loading ? <Spinner /> : Order}
+      </Modal>
+      {burger}
+    </Aux>
+  )
 }
 
-export default BurgerBuilder
+export default withErrorHandler(BurgerBuilder, axios)

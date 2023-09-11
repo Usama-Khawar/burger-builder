@@ -14,10 +14,11 @@ const BuildControls = ({
   onMore,
   price,
   disabledInfo,
-  purchaseable,
   onCheckout,
   checkoutState,
 }) => {
+  const isOrderDisabled = Object.values(disabledInfo).every((value) => value)
+
   return (
     <div className={style.BuildControls}>
       <p>
@@ -37,7 +38,7 @@ const BuildControls = ({
       <button
         onClick={onCheckout}
         className={style.OrderButton}
-        disabled={purchaseable}
+        disabled={isOrderDisabled}
       >
         ORDER NOW
       </button>
